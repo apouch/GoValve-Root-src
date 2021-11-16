@@ -4,10 +4,8 @@ import sys
 import csv
 import vtk
 from vtk.util.numpy_support import vtk_to_numpy
-import matplotlib.pyplot as plt
-from matplotlib.pyplot import figure
-from matplotlib import cm
 import glob
+
 
 def OrderList(flist,N,ref):
     '''
@@ -24,6 +22,8 @@ def OrderList(flist,N,ref):
     # Order filenames so that reference frame goes first
     Fno = np.zeros(N)
     FId = np.zeros(N)
+
+    print(flist)
 
     FListOrdered = [None]*N
     common = os.path.commonprefix(flist)
@@ -77,9 +77,9 @@ def calDisp(polydata,Points,NP,RefPointsFixed,RefMids):
     '''
     #######################################
     # Calculate Displacements and Find Points Fixed Root
-    TotDisp     = np.zeros((NP,3))
-    WallDisp    = np.zeros((NP,3))
-    RootDisp    = np.zeros((NP,3))
+    TotDisp  = np.zeros((NP,3))
+    WallDisp = np.zeros((NP,3))
+    RootDisp = np.zeros((NP,3))
     PointsFixed = np.zeros((NP,3))
 
     # Define total displacement, relative to reference frame
@@ -286,7 +286,7 @@ def calAreaAndVol(polydata,ThickData,NC,NP):
 
     return TotalWallArea, TotalWallVolume, TotalLumenVolume
 
-def calStrains(polydata, RA, NC, l_Cell, c_Cell):
+def calStrains(polydata, RA, NC):
     '''
     Calculate strain invariants with respect to the reference basis
 
@@ -294,17 +294,11 @@ def calStrains(polydata, RA, NC, l_Cell, c_Cell):
     polydata -- vtk object for the current time point
     RA -- numpy array of the reference basis vectors of size NC X 2 X 3
     NC -- number of cells
-    l_Cell -- longitudinal unit vector 
-    c_Cell -- circumferential unit vector 
 
-    Returns two numpy arrays of invariant J and I1 at the cells, and the associated logngitudinal and circumferential strains
-
-    Warning: l_Cell and c_Cell are mesh dependent, thus l_Strain and c_Strain are also mesh dependent
+    Returns two numpy arrays of invariant J and I1 at the cells
     '''
     I1 = np.zeros(NC)
     J  = np.zeros(NC)
-    l_Strain = np.zeros(NC)
-    c_Strain = np.zeros(NC)
 
     for i in range(NC):
         Cell = np.array(polydata.GetCell(i).GetPoints().GetData())
@@ -332,90 +326,9 @@ def calStrains(polydata, RA, NC, l_Cell, c_Cell):
         I1[i] = trC
         J[i]  = np.sqrt((trC**2-trC2)/2)
     
-        # 
-        l_Strain[i] = np.dot(l_Cell[i,:],np.dot(C,l_Cell[i,:]))
-        c_Strain[i] = np.dot(c_Cell[i,:],np.dot(C,c_Cell[i,:]))
-        
-    return J, I1, l_Strain, c_Strain
+    return J, I1
 
 
-def calVectors(polydata,Pts,Cells,NP,NC,CellIds):
-    '''
-    Finds the directional vectors for each point. 
-
-    Keyword arguments:
-    polydata -- vtk object for the current time point
-    Pts -- vtk object for the current time point
-    NP -- number of points
-    NC -- number of cells
-    CellIds -- list of point ids for each cell
-
-    Returns the normal vectors, n, the longitudinal vectors, l, and the circumferential vectors, c, 
-    for both the points and the cells (with suffices *_Pt and *_Cell respectively) 
-
-    Warning: the longitudinal (and by asscociation circumferential) vectors are dependent on the mesh structure.
-    '''
-
-    #Use vtk to get point normals
-    normals = vtk.vtkPolyDataNormals()
-    normals.SetInputData(polydata)
-    normals.SetFlipNormals(True)
-    normals.Update()
-    
-    n_Pt = vtk_to_numpy(normals.GetOutput().GetPointData().GetNormals())
-    
-    n_Cell = np.zeros((NC,3)) 
-
-    #Create empty arrays for longitudinal and circumferential vectors
-    l_Pt = np.zeros((NP,3))
-    c_Pt = np.zeros((NP,3))
-    Circ_Strain = np.zeros((NP,3))
-    Long_Strain = np.zeros((NP,3))
-    l_Cell = np.zeros((NC,3))
-    c_Cell = np.zeros((NC,3))
-
-    #Restructure Pts to be in list of 25 rings with 36 points each (mesh dependent)
-    Points = np.zeros((3,25,36))
-    for i in range(3):
-        for j in range(25):
-            for k in range(36):
-                Points[i,j,k] = Pts[((j)%25+k*25)%900,i]
-
-    #Find longitudinal vectors
-    for i in range(3):
-        for j in range(24):
-            for k in range(36):
-                l_Pt[((j)%25+k*25)%900,i] = Points[i,(j+1)%25,k] - Points[i,j,k]
-
-        for j in [24]:
-            for k in range(36):
-                l_Pt[((j)%25+k*25)%900,i] = Points[i,j,k] - Points[i,(j-1),k]
-
-
-    #Make unit vectors and find circumferential vectors
-    for i in range(NP):
-        #Make normal and longitudinal vectors unit vectors
-        n_Pt[i,:] /= np.sqrt(sum((n_Pt[i,j])**2 for j in range(3)))
-
-        l_Pt[i,:] /= np.sqrt(sum((l_Pt[i,j]**2) for j in range(3)))
-        #Calculate circumferential vector
-        c_Pt[i,:]  = np.cross(n_Pt[i,:],l_Pt[i,:])
-        c_Pt[i,:] /= np.sqrt(sum((c_Pt[i,j]**2) for j in range(3))) 
-    
-    for i in range(NC):
-        for j in range(3):
-            n_Cell[i,j] = (sum(n_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-            l_Cell[i,j] = (sum(l_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-            c_Cell[i,j] = (sum(c_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-
-    for i in range(NC):
-        #Make normal and longitudinal vectors unit vectors
-        l_Cell[i,:] /= np.sqrt(sum((l_Cell[i,j]**2) for j in range(3)))
-        #Calculate circumferential vector
-        c_Cell[i,:] /= np.sqrt(sum((c_Cell[i,j]**2) for j in range(3)))
-        n_Cell[i,:] /= np.sqrt(sum((n_Cell[i,j])**2 for j in range(3)))
-    
-    return n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell
 
 def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True,opformat='vtp'):
     '''
@@ -455,7 +368,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
     reader.Update()
 
     polydata = reader.GetOutput()
-    dataset = polydata.GetPointData()
+    #dataset = polydata.GetPointData()
     RefPoints = vtk_to_numpy(polydata.GetPoints().GetData())
     # Get Number of Points and Cells
     NP = polydata.GetNumberOfPoints()
@@ -485,12 +398,12 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
     # Define empty array for reference basis
     RA = np.zeros((NC,2,3))
-    Cells = np.zeros((NC,3,3))
+
     for i in range(NC):
-        Cells[i,:,:] = vtk_to_numpy(polydata.GetCell(i).GetPoints().GetData())
+        Cells = vtk_to_numpy(polydata.GetCell(i).GetPoints().GetData())
         # Define refernce cell vectors
-        RA[i,0,:] = Cells[i,2,:]-Cells[i,0,:]
-        RA[i,1,:] = Cells[i,2,:]-Cells[i,1,:]
+        RA[i,0,:] = Cells[2,:]-Cells[0,:]
+        RA[i,1,:] = Cells[2,:]-Cells[1,:]
 
 
     ###########################################
@@ -569,13 +482,6 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         # Save Point coordinates to array to be saved
         Pts[X,:,:] = vtk_to_numpy(polydata.GetPoints().GetData())
 
-        Cells = np.zeros((NC,3,3))
-        CellIds = np.zeros((NC,3))
-        for i in range(NC):
-            Cells[i,:,:] = vtk_to_numpy(polydata.GetCell(i).GetPoints().GetData())
-            for j in range(3):
-                CellIds[i,j] = (polydata.GetCell(i).GetPointIds().GetId(j))
-
         #########################################
         # Calculate Displacements
         TotDisp, WallDisp, RootDisp = calDisp(polydata,Pts[X,:,:],NP,RefPointsFixed,RefMids)
@@ -613,16 +519,8 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         InterAtrialSeptum[0:25] = 1
 
         #########################################
-        #Define Normal, Longitudinal, and Circumferential vectors
-        n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell = calVectors(polydata,Pts[X,:,:],Cells,NP,NC,CellIds)
-
-        #########################################
         #Define Properties: J and I1
-        J, I1, Long_Strain, Circ_Strain = calStrains(polydata,RA,NC, l_Cell, c_Cell)
-
-        # Save areas and volumes for each frame
-        AvgJ[X]       = np.mean(J)
-        AvgI1[X]      = np.mean(I1)
+        J, I1 = calStrains(polydata,RA,NC)
 
         #########################################
         # Define Curvature
@@ -653,36 +551,28 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         # Add Data to Files and Write Files
 
         # Add Cell Data
-        CellData  = [I1, J, Long_Strain, Circ_Strain]
-        CellNames = ['I1','J','Long_Strain', 'Circ_Strain'] 
+        CellData  = [I1,J]
+        CellNames = ['I1','J'] 
         for i in range(len(CellNames)) :
             arrayCell = vtk.util.numpy_support.numpy_to_vtk(CellData[i], deep=True)
             arrayCell.SetName(CellNames[i])
             dataCells = polydata.GetCellData()
             dataCells.AddArray(arrayCell)
 
-        #NumArr = c2p.GetPolyDataOutput().GetPointData().GetNumberOfArrays()
+        NumArr = polydata.GetPointData().GetNumberOfArrays()
 
         # Convert Cell Data to Point Data
         c2p = vtk.vtkCellDataToPointData()
         c2p.AddInputData(polydata)
         c2p.Update()
         c2p.GetOutput()
-        NumOfArr = c2p.GetPolyDataOutput().GetPointData().GetNumberOfArrays()
 
-        for i in range(NumOfArr):
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'I1':
-                I1_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'J':
-                J_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Long_Strain':
-                l_Strain_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Circ_Strain':
-                c_Strain_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
+        I1pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(NumArr))
+        Jpt  = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(NumArr+1))
 
         # Add Point Data
-        PointData = [CDG,CDM,I1_Pt,J_Pt,Motion,InterAtrialSeptum,TotalMotion[X],l_Strain_Pt,c_Strain_Pt]
-        PointNames = ['Curv_Gaussian','Curv_Mean','I1_Pt','J_Pt','Motion','IAS','Total_Motion','Long_Strain_Pt','Circ_Strain_Pt']
+        PointData = [CDG,CDM,I1pt,Jpt,Motion,InterAtrialSeptum,TotalMotion[X]]
+        PointNames = ['CurvGaussian','CurvMean','I1_Pt','J_Pt','Motion','InterAtrialSeptum','TotalMotion'] 
         for i in range(len(PointNames)) :
             arrayPoint = vtk.util.numpy_support.numpy_to_vtk(PointData[i], deep=True)
             arrayPoint.SetName(PointNames[i])
@@ -690,9 +580,9 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
             dataPoints.AddArray(arrayPoint)
             dataPoints.Modified()
 
-        # Add Vector Data on Points
-        VectorData = [TotDisp,WallDisp,RootDisp,n_Pt,l_Pt,c_Pt]
-        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root','Normal','Longtudinal','Circumferential']
+        # Add Vector Data
+        VectorData = [TotDisp,WallDisp,RootDisp]
+        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root'] 
         for i in range(len(VectorNames)) :
             arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
             arrayVector.SetName(VectorNames[i])
@@ -700,23 +590,13 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
             dataVectors.AddArray(arrayVector)
             dataVectors.Modified()
 
-        # Add Vector Data on Cells
-        VectorData = [n_Cell,l_Cell,c_Cell]
-        VectorNames = ['Normal','Longtudinal','Circumferential']
-        for i in range(len(VectorNames)) :
-            arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
-            arrayVector.SetName(VectorNames[i])
-            dataVectors = polydata.GetCellData()
-            dataVectors.AddArray(arrayVector)
-            dataVectors.Modified()
-
         # Add Field Data
         if OF is not None and CF is not None:
             FieldData = [WallArea[X], WallVol[X],LumenVol[X],ValvePosition[X]]
-            FieldNames = ['Wall_Area','Wall_Volume','Lumen_Volume','Valve_Position'] 
+            FieldNames = ['WallArea','WallVolume','LumenVolume','ValvePosition'] 
         else:
             FieldData = [WallArea[X], WallVol[X],LumenVol[X]]
-            FieldNames = ['Wall_Area','Wall_Volume','Lumen_Volume'] 
+            FieldNames = ['WallArea','WallVolume','LumenVolume'] 
 
         for i in range(len(FieldNames)) :
             arrayField = vtk.util.numpy_support.numpy_to_vtk(FieldData[i], deep=True)
@@ -734,9 +614,10 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         #################################
         # Write data to vtp files
         if opformat == 'vtp':
-            fname = prefix + os.path.splitext(Fname)[0] + '.vtp'
+            fname = os.path.join(prefix,os.path.split(os.path.splitext(Fname)[0])[1] + '.vtp')
+            print(fname)
         elif opformat == 'vtk':
-            fname = prefix + os.path.splitext(Fname)[0] + '.vtk'
+            fname = os.path.join(prefix,os.path.split(os.path.splitext(Fname)[0])[1] + '.vtk')
         else:
             raise ValueError("Only vtp and vtk output formats are allowed")
         directory = os.path.dirname(fname)
@@ -749,22 +630,20 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
             writer = vtk.vtkDataSetWriter()
         else:
             raise ValueError("Only vtp and vtk output formats are allowed")
-        
+        print(fname)
         writer.SetFileName(fname)
         writer.SetInputData(polydata)
-        print('Writing ',fname)
+        print('Writing',fname)
         writer.Write()
 
     WallAreaRatio[:]  = WallArea[:]/WallArea[0]
     WallVolRatio[:]   = WallVol[:]/WallVol[0]
     LumenVolRatio[:]  = LumenVol[:]/LumenVol[0]
-    AvgJRatio[:]      = AvgJ[:]/AvgJ[0]
-    AvgI1Ratio[:]     = AvgI1[:]/AvgI1[0]
 
     return WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N
 
 if __name__=='__main__':
-    
+        
     FixAndRotate = True
     
     WDIR = sys.argv[1]
@@ -774,8 +653,6 @@ if __name__=='__main__':
     refN = int(sys.argv[5])
         
     print("Computing root strain")
-    print("Frame time ...")
-    print(FT)
     
     fnames = sorted(glob.glob(os.path.join(WDIR,'*med*.vtk')))
     fdir = os.path.dirname(fnames[0])
@@ -793,14 +670,15 @@ if __name__=='__main__':
     NX = len(fnames)
 
     if not fnames:
-        print(WDIR," is empty")
+        print("Working directory is empty")
     else:
         fdir = os.path.dirname(fnames[0])
         # Check Directory
         if not os.path.exists(fdir):
             print('Error: Path does not exist:', fdir)
             sys.exit()
-        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,opformat='vtp')
+        prefix = os.path.join(fdir,'Strains')
+        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N = ProcessData(flist=fnames,ref=ref,FT=100.,OF=OF,CF=CF,prefix=prefix,opformat='vtp')
 
     print('Total Wall Area =',WallArea)
     print('Total Wall Volume =',WallVol)
@@ -808,105 +686,7 @@ if __name__=='__main__':
    
     ###################################
     # Save data
+    print(fdir)
     DataLocation = os.path.join(WDIR,'Data.npz')
-    np.savez(DataLocation,Time=Time,Pts=Pts,WallArea=WallArea,WallVol=WallVol, LumenVol=LumenVol, WallAreaRatio=WallAreaRatio, WallVolRatio=WallVolRatio, LumenVolRatio=LumenVolRatio, AvgJ=AvgJ,AvgI1=AvgI1, AvgJRatio=AvgJRatio, AvgI1Ratio=AvgI1Ratio, N=N, OF=OF, CF=CF,refN = refN)
-
-    L = len(Time)
-
-    CSVDataOriginal = np.zeros((L,15))
-    CSVDataStandardA = np.zeros((33,15))
-    CSVDataStandardB = np.zeros((68,15))
-    CSVDataStandard = np.zeros((101,15))
-
-    CSVDataOriginal[:,0]  = Time
-    CSVDataOriginal[:,1]  = WallArea
-    CSVDataOriginal[:,2]  = WallVol
-    CSVDataOriginal[:,3]  = LumenVol
-    CSVDataOriginal[:,4]  = WallAreaRatio
-    CSVDataOriginal[:,5]  = WallVolRatio
-    CSVDataOriginal[:,6]  = LumenVolRatio
-    CSVDataOriginal[:,7]  = AvgJ
-    CSVDataOriginal[:,8]  = AvgI1
-    CSVDataOriginal[:,9]  = AvgJRatio
-    CSVDataOriginal[:,10] = AvgI1Ratio
-    CSVDataOriginal[:,11] = np.full(L,N)
-    CSVDataOriginal[:,12] = np.full(L,OF)
-    CSVDataOriginal[:,13] = np.full(L,CF)
-    CSVDataOriginal[:,14] = np.full(L,refN)
-
-    TimeOpen  = np.linspace(0,320,33)
-    TimeClose = np.linspace(330,1000,68)
-    TimeStandard  = np.concatenate((TimeOpen,TimeClose))
-
-    Oid = int(OF) - int(refN)
-    Cid = int(CF) - int(refN)
-
-    CSVDataStandard[:,0] = TimeStandard
-    for i in range(1,15):
-        CSVDataStandardA[:,i] = np.interp(np.linspace(Time[0],Time[Cid],33),Time[0:Cid+1],CSVDataOriginal[0:Cid+1,i])
-        CSVDataStandardB[:,i] = np.interp(np.linspace(Time[Cid],Time[L-1],68),Time[Cid:L],CSVDataOriginal[Cid:L,i])
-        CSVDataStandard[:,i]  = np.concatenate((CSVDataStandardA[:,i],CSVDataStandardB[:,i]))
-
-    CSVDataOriginalFile = os.path.join(WDIR,'CSVDataOriginal.csv')
-    CSVDataStandardFile = os.path.join(WDIR,'CSVDataStandard.csv')
-
-    np.savetxt(CSVDataOriginalFile, CSVDataOriginal, delimiter=",",header="Time, Wall Area,Wall Volume, Lumen Volume, Wall Area Ratio, Wall Volume Ratio, Lumen Volume Ratio, Avg J,Avg I1, Avg J Ratio, Avg I1 Ratio, No. of Frames, Open Frame, Closing Frame, Ref Frame")
-    np.savetxt(CSVDataStandardFile, CSVDataStandard, delimiter=",",header="Time, Wall Area, Wall Volume, Lumen Volume, Wall Area Ratio, Wall Volume Ratio, Lumen Volume Ratio, Average J, Average I1, Average J Ratio, Average I1 Ratio, No. of Frames, Open Frame, Closing Frame, Ref Frame")
-
-    Fig1name = os.path.join(WDIR,'RatioCompOriginal.png')
-    Fig2name = os.path.join(WDIR,'RatioCompStandard.png')
-    Fig3name = os.path.join(WDIR,'OriginalGeometryData.png')
-    Fig4name = os.path.join(WDIR,'StandardOriginalData.png')
-
-    plt.figure(num=1,figsize=(7,4))
-    plt.plot(CSVDataOriginal[:,0], CSVDataOriginal[:,4],'r', CSVDataOriginal[:,0], CSVDataOriginal[:,5],'b',CSVDataOriginal[:,0],CSVDataOriginal[:,6],'k')
-    plt.set_title=('Raw Time Data')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Ratio ',size=12)
-    plt.legend(['Wall Area Ratio', 'Wall Volume Ratio','Lumen Volume Ratio'],loc='lower right')
-    plt.savefig(Fig1name, format='png')
-
-    plt.figure(num=2,figsize=(7,4))
-    plt.plot(CSVDataStandard[:,0], CSVDataStandard[:,4],'r', CSVDataStandard[:,0],CSVDataStandard[:,5],'b',CSVDataStandard[:,0],CSVDataStandard[:,6],'k')
-    plt.set_title=('Standardised Time Data')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Ratio ',size=12)
-    plt.legend(['Wall Area Ratio', 'Wall Volume Ratio', 'Lumen Volume Ratio'],loc='lower right')
-    plt.savefig(Fig2name, format='png')
-
-    plt.figure(num=3,figsize=(15, 4))
-    plt.subplot(1,3,1)
-    plt.plot(CSVDataOriginal[:,0], CSVDataOriginal[:,1]/1000,'r')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Wall Area (x10^3 mm^2)',size=12)
-    plt.subplot(1,3,2)
-    plt.plot( CSVDataOriginal[:,0],CSVDataOriginal[:,2]/1000,'b')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Wall Volume (x10^3 mm^3)',size=12)
-    plt.subplot(1,3,3)
-    plt.plot(CSVDataOriginal[:,0],CSVDataOriginal[:,3]/1000,'k')
-    plt.set_title=('Raw Time Data')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Lumen Volume (x10^3 mm^3)',size=12)
-    plt.savefig(Fig3name, format='png')
-    
-    plt.figure(num=4,figsize=(15, 4))
-    plt.subplot(1,3,1)
-    plt.plot(CSVDataStandard[:,0], CSVDataStandard[:,1]/1000,'r')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Wall Area (x10^3 mm^2)',size=12)
-    plt.subplot(1,3,2)
-    plt.plot( CSVDataStandard[:,0],CSVDataStandard[:,2]/1000,'b')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Wall Volume (x10^3 mm^3)',size=12)
-    plt.subplot(1,3,3)
-    plt.plot(CSVDataStandard[:,0],CSVDataStandard[:,3]/1000,'k')
-    plt.set_title=('Raw Time Data')
-    plt.xlabel('Time (ms)',size=12)
-    plt.ylabel('Lumen Volume (x10^3 mm^3)',size=12)
-    plt.savefig(Fig4name, format='png')
-
-    #os.system("pdflatex Summary.tex")
-    #pdfname = os.path.join(WDIR,'Summary.pdf')
-    #os.rename("Summary.pdf", pdfname )
+    np.savez(DataLocation,Time=Time,Pts=Pts,WallArea=WallArea,WallVol=WallVol, LumenVol=LumenVol, WallAreaRatio=WallAreaRatio, WallVolRatio=WallVolRatio, LumenVolRatio=LumenVolRatio, N=N, OF=OF, CF=CF)
 

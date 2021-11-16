@@ -14,7 +14,7 @@ import sys
 WDIR = sys.argv[1]
 FNIMG = sys.argv[2]
 FNSEG = sys.argv[3]
-NREF = sys.argv[4]
+NREF = int(sys.argv[4])
 
 print("Stacking segmentation volumes")
 
@@ -37,7 +37,7 @@ for i in range(nf):
     if j == NREF:
         vol.append(seg_ref)
     else:
-        s = "seg*_to_" + str(j) + "*reslice.nii.gz"
+        s = "seg*_to_" + str(j) + "_*reslice.nii.gz"
         fn = sorted(glob.glob(os.path.join(WDIR,s)))
         if len(fn) == 0:
             vol.append(seg_ref_blank)

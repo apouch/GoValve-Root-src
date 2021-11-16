@@ -6,16 +6,18 @@ WDIR = sys.argv[1]
 FNIMG = sys.argv[2]
 FNSEG = sys.argv[3]
 NREF = int(sys.argv[4])
-TAG = sys.argv[5]
-PATH_GREEDY = sys.argv[6]
-PATH_VTKLEVELSET = sys.argv[7]
+NSTART = int(sys.argv[5])
+NSTOP = int(sys.argv[6])
+TAG = sys.argv[7]
+PATH_GREEDY = sys.argv[8]
+PATH_VTKLEVELSET = sys.argv[9]
 
 print("Propagating reference segmentation")
 
 # Create a new Propagator
 p = Propagator()
 
-targetFrame = [1,5,6]
+targetFrame = range(NSTART,NSTOP+1)
 
 ## Set parameters
 p.SetTag(TAG)

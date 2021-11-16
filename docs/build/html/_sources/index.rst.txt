@@ -6,6 +6,9 @@
 Welcome to GoValve-Root's documentation!
 ========================================
 
+**GoValve-Root** is an ITK-SNAP distributed segmentation service that computes aortic root
+strain over the cardiac cycle from a 4D image series.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

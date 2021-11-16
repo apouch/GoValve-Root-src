@@ -15,7 +15,7 @@ class Propagator:
         self._greedyLocation = "greedy"
         self._vtklevelsetLocation = "vtklevelset"
         self._greedy = None
-        self._fullResIteration = '100x100'
+        self._fullResIteration = '100x30'
         self._dilatedResIteration = '100x100'
         self._metric_spec = 'SSD'
         self._threads = -1
