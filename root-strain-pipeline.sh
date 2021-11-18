@@ -44,4 +44,8 @@ FNBNDOUT=$WDIR/segref.bnd.vtk
 python compute_strain.py ${WDIR}/output/mesh $FT $NOPEN $NCLOSE $NREF
 
 # create 4D root segmentation
+echo "${WDIR}/output"
+echo $FNIMG
+echo $FNSEG
+echo $NREF
 python stack_img3d.py ${WDIR}/output $FNIMG $FNSEG $NREF 

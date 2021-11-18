@@ -18,6 +18,11 @@ NREF = int(sys.argv[4])
 
 print("Stacking segmentation volumes")
 
+print(WDIR)
+print(FNIMG)
+print(FNSEG)
+print(NREF)
+
 # list of propagated segmentations
 fnseg_prop = sorted(glob.glob(os.path.join(WDIR,"seg*_to_*reslice.nii.gz")))
 
@@ -39,6 +44,7 @@ for i in range(nf):
     else:
         s = "seg*_to_" + str(j) + "_*reslice.nii.gz"
         fn = sorted(glob.glob(os.path.join(WDIR,s)))
+        print(fn[0])
         if len(fn) == 0:
             vol.append(seg_ref_blank)
         else:

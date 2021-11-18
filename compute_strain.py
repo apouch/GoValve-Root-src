@@ -734,9 +734,9 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         #################################
         # Write data to vtp files
         if opformat == 'vtp':
-            fname = prefix + os.path.splitext(Fname)[0] + '.vtp'
+            fname = os.path.join(prefix,os.path.split(os.path.splitext(Fname)[0])[1] + '.vtp')
         elif opformat == 'vtk':
-            fname = prefix + os.path.splitext(Fname)[0] + '.vtk'
+            fname = os.path.join(prefix,os.path.split(os.path.splitext(Fname)[0])[1] + '.vtk')
         else:
             raise ValueError("Only vtp and vtk output formats are allowed")
         directory = os.path.dirname(fname)
@@ -800,7 +800,7 @@ if __name__=='__main__':
         if not os.path.exists(fdir):
             print('Error: Path does not exist:', fdir)
             sys.exit()
-        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,opformat='vtp')
+        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),opformat='vtp')
 
     print('Total Wall Area =',WallArea)
     print('Total Wall Volume =',WallVol)
