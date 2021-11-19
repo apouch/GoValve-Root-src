@@ -20,9 +20,9 @@ echo $NCLOSE
 echo $NDONE
 echo $TAG
 
-PATH_GREEDY=/Users/alison/greedy-itk5/BUILD/greedy
-PATH_VTKLEVELSET=/Users/alison/cmrep-czi54/build
-PATH_MATLAB=/Applications/MATLAB_R2021a.app/bin
+PATH_GREEDY=/home/apouch/src/itksnap-4.0.0-alpha-20211103-Linux-gcc64/bin
+PATH_VTKLEVELSET=/home/apouch/build/cmrep-dev-czi-54
+PATH_MATLAB=/usr/local/bin
 
 # get frame time of 4D image
 FT=$(python get_frametime.py ${FNIMG})
@@ -35,10 +35,10 @@ $PATH_VTKLEVELSET/vtklevelset -pl $FNSEG $FNVTK 1
 # create medial and boundary meshes of reference segmentation
 FNMEDOUT=$WDIR/segref.med.vtk
 FNBNDOUT=$WDIR/segref.bnd.vtk
-#$PATH_MATLAB/matlab -batch "medial_mesh('$FNVTK','$FNMEDOUT','$FNBNDOUT')"
+$PATH_MATLAB/matlab -batch "medial_mesh('$FNVTK','$FNMEDOUT','$FNBNDOUT')"
 
 # propagate reference mesh to other frames in the series
-#python run_propagation_root.py $WDIR $FNIMG $FNSEG $NREF $NSTART $NDONE $TAG $PATH_GREEDY $PATH_VTKLEVELSET
+python run_propagation_root.py $WDIR $FNIMG $FNSEG $NREF $NSTART $NDONE $TAG $PATH_GREEDY $PATH_VTKLEVELSET
 
 # compute root strain
 python compute_strain.py ${WDIR}/output/mesh $FT $NOPEN $NCLOSE $NREF
@@ -48,4 +48,4 @@ echo "${WDIR}/output"
 echo $FNIMG
 echo $FNSEG
 echo $NREF
-python stack_img3d.py ${WDIR}/output $FNIMG $FNSEG $NREF 
+python stack_img3D.py ${WDIR}/output $FNIMG $FNSEG $NREF 
