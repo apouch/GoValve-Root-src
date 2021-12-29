@@ -13,6 +13,10 @@ strain over the cardiac cycle from a 4D image series.
    :maxdepth: 2
    :caption: Contents:
 
+Prerequisites
+=============
+*`ITK-SNAP <itksnap.org>` 4.0 or later
+
 
 
 Indices and tables
