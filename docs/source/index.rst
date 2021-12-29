@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to GoValve-Root's documentation!
-========================================
+GoValve-Root Documentation
+==========================
 
-**GoValve-Root** is an ITK-SNAP distributed segmentation service (DSS) that computes aortic root
+**GoValve-Root** is an ITK-SNAP distributed segmentation service that computes aortic root
 strain over the cardiac cycle from a 4D image series.
 
 .. toctree::
@@ -15,26 +15,30 @@ strain over the cardiac cycle from a 4D image series.
 
 Prerequisites
 =============
-<<<<<<< HEAD
-* `ITK-SNAP <itksnap.org>` version 4.0 or later
-Note that earlier versions of ITK-SNAP do not handle 4D segmentations.
-=======
-*`ITK-SNAP <itksnap.org>` 4.0 or later
+* ITK-SNAP `<itksnap.org>` version 4.0 or later
+  `Note that earlier versions of ITK-SNAP do not handle 4D segmentations`
+* User account registration at `<https://dss.itksnap.org>`
 
->>>>>>> ccd2497a1813488e87bda41ae439571f3f370ce4
-
-DSS Pipeline Overview
-=====================
+Distributed Segmentation Service (DSS) Overview
+===============================================
 As with any DSS implemented in ITK-SNAP, the GoValve-Root service involves three layers of communication:
 
 **client**
-  The user supplies the input to the algorithm by loading a 4D image of the aortic root in the ITK-SNAP GUI (version 4.0 or later), creating a 3D segmentation of the aortic root in a "reference frame" (a single 3D image volume in the 4D series), and tagging relevant time points in the cardiac cycle.
+  The user loads a 4D image of the aortic root in the ITK-SNAP GUI (version 4.0 or later), creates a 3D segmentation of the aortic root in a "reference frame" (a single 3D image volume in the 4D series), and tags relevant time frames in the cardiac cycle. This creates a `workspace` that serves as input to the strain analysis algorithm.
 
 **middleware**
-  The ITK-SNAP workspace created by the client is submitted to the ITK-SNAP DSS middleware layer, which orchestrates communication between the client and the service provider that carries out the image analysis algorithm. The main production DSS middleware runs at https://dss.itksnap.org. The user must create an account and sign in to dss.itksnap.org before submitting an image for segmentation and strain analysis.
+  The ITK-SNAP workspace created by the client is submitted to the ITK-SNAP DSS middleware layer, which orchestrates communication between the client and the service provider that carries out the image analysis algorithm. The main production DSS middleware runs at https://dss.itksnap.org. The user must create an account and sign into dss.itksnap.org before submitting an image for segmentation and strain analysis.
 
 **service**
-  The server that runs the strain analysis algorithm receives the image from the DSS middleware layer and returns the output 4D aortic root segmentation, mesh series, and strain information.  
+  The remote server that runs the strain analysis algorithm receives the de-identified image from the DSS middleware layer and returns the output 4D aortic root segmentation, mesh series, and strain information.  
+
+Algorithm Overview
+==================
+A full description of the 4D image analysis and strain computation algorithm can be found [here]. The (client-side) instructions for providing the input to the algorithm involve three main steps:
+* Loading a 4D image
+* Creating a 3D reference segmentation of the aortic root
+* Tagging time frames
+
 
 Indices and tables
 ==================
