@@ -15,8 +15,13 @@ strain over the cardiac cycle from a 4D image series.
 
 Prerequisites
 =============
+<<<<<<< HEAD
 * `ITK-SNAP <itksnap.org>` version 4.0 or later
 Note that earlier versions of ITK-SNAP do not handle 4D segmentations.
+=======
+*`ITK-SNAP <itksnap.org>` 4.0 or later
+
+>>>>>>> ccd2497a1813488e87bda41ae439571f3f370ce4
 
 DSS Pipeline Overview
 =====================
