@@ -10,19 +10,22 @@ NCLOSE=$7
 NDONE=$8
 TAG=$9
 
-echo $WDIR
-echo $FNIMG
-echo $FNSEG
-echo $NREF
-echo $NSTART
-echo $NOPEN
-echo $NCLOSE
-echo $NDONE
-echo $TAG
+echo "Working directory: $WDIR"
+echo "Image filename: $FNIMG"
+echo "Segmentation filename: $FNSEG"
+echo "Reference frame number: $NREF"
+echo "Start frame number: $NSTART"
+echo "Open frame number: $NOPEN"
+echo "Close frame number: $NCLOSE"
+echo "End frame number: $NDONE"
+echo "Tag: $TAG"
 
 PATH_GREEDY=/home/apouch/src/itksnap-4.0.0-alpha-20211103-Linux-gcc64/bin
 PATH_VTKLEVELSET=/home/apouch/build/cmrep-dev-czi-54
 PATH_MATLAB=/usr/local/bin
+PATH_SCRIPTS=/home/apouch/GoValve-Root-src
+
+cd $PATH_SCRIPTS
 
 # get frame time of 4D image
 FT=$(python get_frametime.py ${FNIMG})
@@ -45,7 +48,7 @@ python compute_strain.py ${WDIR}/output/mesh $FT $NOPEN $NCLOSE $NREF
 
 # create 4D root segmentation
 echo "${WDIR}/output"
-echo $FNIMG
-echo $FNSEG
-echo $NREF
+echo "Image filename is: $FNIMG"
+echo "Segmentation filename is: $FNSEG"
+echo "Reference frame is: $NREF"
 python stack_img3D.py ${WDIR}/output $FNIMG $FNSEG $NREF 

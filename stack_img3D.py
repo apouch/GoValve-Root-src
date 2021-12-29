@@ -6,10 +6,10 @@ Created on Tue Sep 21 15:03:33 2021
 @author: alison
 """
 
+import sys
 import SimpleITK as sitk
 import os
 import glob
-import sys
 
 WDIR = sys.argv[1]
 FNIMG = sys.argv[2]
@@ -39,12 +39,12 @@ seg_ref_blank = 0*seg_ref
 vol = []
 for i in range(nf):
     j = i + 1
+    print(j)
     if j == NREF:
         vol.append(seg_ref)
     else:
         s = "seg*_to_" + str(j) + "_*reslice.nii.gz"
         fn = sorted(glob.glob(os.path.join(WDIR,s)))
-        print(fn[0])
         if len(fn) == 0:
             vol.append(seg_ref_blank)
         else:
