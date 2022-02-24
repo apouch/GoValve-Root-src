@@ -22,11 +22,9 @@ bash /home/apouch/GoValve-Root-src/root-strain-pipeline.sh $WDIR $fn_img4D $fn_s
 zip -r $WDIR/output/mesh/output-meshes.zip $WDIR/output/mesh/Strains 
 
 RESULT_WSP=$WDIR/result.itksnap
-#${PATH_SNAP}/itksnap-wt -layers-set-main $fn_img4D \
-#           -layers-set-seg $WDIR/output/seg4d.nii.gz \
-#           -o $RESULT_WSP
-
 ${PATH_SNAP}/itksnap-wt -i $WS \
 	-layers-set-main $fn_img4D \
 	-layers-set-seg $WDIR/output/seg4d.nii.gz \
 	-o $RESULT_WSP
+
+
