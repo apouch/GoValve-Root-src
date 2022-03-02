@@ -128,7 +128,10 @@ Once finished, the ticket is downloaded and the user can view the 4D segmentatio
 Note that there are attachments included with the returned ticket, including a Summary PDF file with graphs of the strain assessment, as well as VTP mesh files that can be loaded into a program such as Paraview in order to visualize strain on the 3D mesh. 
 
 
-
+Acknowledgements
+================
+This pipeline was developed as a collaboration between the Penn Image Computing and Science Laboratory & Aggarwal Laboratory at the University of Glasgow.
+Funding was provided by the Chan Zuckerberg Initiative for Essential Open Source Software for Science.
 
 
 
