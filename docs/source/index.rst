@@ -15,8 +15,7 @@ strain over the cardiac cycle from a 4D image series.
 
 Prerequisites
 =============
-* ITK-SNAP `<itksnap.org>` version 4.0 or later
-  `Note that earlier versions of ITK-SNAP do not handle 4D segmentations`
+* ITK-SNAP `<itksnap.org>` version 4.0 or later. `Note that earlier versions of ITK-SNAP do not handle 4D segmentations`
 * User account registration at `<https://dss.itksnap.org>`
 
 Distributed Segmentation Service (DSS) Overview
@@ -32,7 +31,7 @@ As with any DSS implemented in ITK-SNAP, the GoValve-Root service involves three
 **service**
   The remote server that runs the strain analysis algorithm receives the de-identified image from the DSS middleware layer and returns the output 4D aortic root segmentation, mesh series, and strain information.
 
-.. warning:: At the present, DSS is intended for processing of small batches of datasets. None of the providers have the capacity to process hundreds or thousands of datasets for individual users. In the future, we envision extending this system to use cloud-based computing resources with the ability to pass the computational costs to end-users.  
+.. warning:: At the present, DSS is intended for processing of small batches of datasets. In the future, we envision extending this system to use cloud-based computing resources with the ability to pass the computational costs to end-users.  
 
 TUTORIAL
 ========
@@ -47,18 +46,20 @@ A full description of the 4D image analysis and strain computation algorithm can
 In this tutorial, we will generate a 4D segmentation of the aortic root in one cardiac cycle in echocardiography. 
 
 Load Sample Image and Annotation File
------------------------------------------
+-------------------------------------
 A Cartesian DICOM file can be obtained from the ITK-SNAP download page [here]. The image can be loaded into ITK-SNAP by simply dragging and dropping the file into the program or by navigating to the file (File -> Open Main Image...). Once loaded, the user can scroll through different time frames of the 4D image series on the sidebar, as noted below.
 
 .. image:: images/load-image.png
     :width: 60%
     :align: center
 
+
 The standardized annotation text file "Aortic_Root_Labels.txt" (also on the ITK-SNAP download page) is loaded by navigating to Segmentation -> Import Label Descriptions. The file assigns text and a color to each anatomical component: the aortic root, interatrial septum (IAS), sinotubular junction (STJ), and left ventricular outlet (LVOT). This file should always be used with this pipeline as it assigns consistent integer labels to the anatomical components represented in the segmentation.
 
 .. image:: images/import-labels.png
     :width: 60%
     :align: center
+
 
 Generate (or Load) a Reference Segmentation
 -------------------------------------------
