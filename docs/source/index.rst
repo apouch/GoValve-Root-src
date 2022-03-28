@@ -15,7 +15,7 @@ strain over the cardiac cycle from a 4D image series.
 
 Prerequisites
 =============
-* ITK-SNAP `<itksnap.org>` version 4.0 or later. `Note that earlier versions of ITK-SNAP do not handle 4D segmentations`
+* ITK-SNAP `<itksnap.org>` version 4.0 or later. `Note that earlier versions of ITK-SNAP do not handle 4D segmentations.`
 * User account registration at `<https://dss.itksnap.org>`
 
 Distributed Segmentation Service (DSS) Overview
@@ -38,7 +38,7 @@ TUTORIAL
 
 Algorithm Overview
 ------------------
-A full description of the 4D image analysis and strain computation algorithm can be found [here]. The (client-side) instructions for providing the input to the algorithm involve three main steps:
+The (client-side) instructions for providing the input to the algorithm involve three main steps:
 * Loading a 4D image and standard label annotation file
 * Creating a 3D reference segmentation of the aortic root
 * Annotating time frames in the cardiac cycle
@@ -63,7 +63,7 @@ The standardized annotation text file "Aortic_Root_Labels.txt" (also on the ITK-
 
 Generate (or Load) a Reference Segmentation
 -------------------------------------------
-The user selects and navigates to a "reference" time frame which will be the baseline for strain measurement. In this case, we chose the 4th time frame and load an existing segmentation of the aortic root (available on the ITK-SNAP download page). As shown below, the Label Editor can be used to view the label descriptions and the segmentation can be set to "Continuous Update" (arrow at the bottom of the 3D visualization panel). 
+The user selects and navigates to a "reference" time frame for which a segmentation of the aortic root will be generated. In this case, we choose the 4th time frame and load an existing segmentation of the aortic root (available on the ITK-SNAP download page). As shown below, the Label Editor can be used to view the label descriptions and the segmentation can be set to "Continuous Update" (arrow at the bottom of the 3D visualization panel). 
 
 .. image:: images/load-segmentation.png
     :width: 60%
@@ -98,27 +98,30 @@ Finally, the user saves the workspace, which contains the image and segmentation
 
 Submit a Ticket
 ---------------
+
+The user selects `Distributed Segmentation Service...` from the Tools menu.
+
+.. image:: images/select-tools-dss.png
+    :width: 60%
+    :align: center
+
 After logging into the DSS site, the GoValve-Root pipeline is selected in the Submit drop-down menu.
 
+.. image:: images/select-root-pipeline.png
+    :width: 60%
+    :align: center
 
+The user completes an entry for each of the algorithm inputs: the main image, segmentation, and five time frames. Then the workspace is submitted.
 
+.. image:: images/complete-tags.png
+    :width: 60%
+    :align: center
 
-The user selects each of the algorithm inputs: the main image, segmentation, and five time points.
+The submission will be assigned a Ticket (left side of the Results menu) and the user will be notified when the ticket is downloaded. Note that processing may take a while depending on the image size and number of frames in the cardiac cycle!
 
-
-
-
-
-Finally, the workspace is submitted. 
-
-
-
-
-
-
-The submission will be assigned a Ticket (left side of the results menu) and the user will be notified when the ticket is downloaded. Note that processing may take a while depending on the image size and number of frames in the cardiac cycle!
-
-
+.. image:: images/progress-messages.png
+    :width: 60%
+    :align: center
 
 
 Once finished, the ticket is downloaded and the user can view the 4D segmentation result by scrolling through the time frames of the cardiac cycle.
@@ -134,11 +137,13 @@ Acknowledgements
 This pipeline was developed as a collaboration between the Penn Image Computing and Science Laboratory & Aggarwal Laboratory at the University of Glasgow.
 Funding was provided by the Chan Zuckerberg Initiative for Essential Open Source Software for Science.
 
+Contributors: 
+Ankush Aggarwal, Ph.D.
+Jilei Hao, M.S.
+Peter Mortensen, Ph.D.
+Alison Pouch, Ph.D.
 
-
-
-
-
+And many thanks to Dr. Paul Yushkevich for building the foundation for ITK-SNAP distributed segmentation services!
 
 
 Indices and tables
