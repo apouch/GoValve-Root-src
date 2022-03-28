@@ -16,7 +16,7 @@ strain over the cardiac cycle from a 4D image series.
 Prerequisites
 =============
 * ITK-SNAP `<itksnap.org>` version 4.0 or later. `Note that earlier versions of ITK-SNAP do not handle 4D segmentations.`
-* User account registration at `<https://dss.itksnap.org>`
+* User account registration at `<https://dss.itksnap.org>`.
 
 Distributed Segmentation Service (DSS) Overview
 ===============================================
