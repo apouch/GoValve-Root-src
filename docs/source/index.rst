@@ -143,12 +143,5 @@ Jilei Hao, M.S.
 Peter Mortensen, Ph.D.
 Alison Pouch, Ph.D.
 
-And many thanks to Dr. Paul Yushkevich for building the foundation for ITK-SNAP distributed segmentation services!
+Many thanks to Dr. Paul Yushkevich for building the foundation for ITK-SNAP distributed segmentation services!
 
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
