@@ -47,7 +47,7 @@ In this tutorial, we will generate a 4D segmentation of the aortic root in one c
 
 Load Sample Image and Annotation File
 -------------------------------------
-A Cartesian DICOM file can be obtained from the ITK-SNAP download page [here]. The image can be loaded into ITK-SNAP by simply dragging and dropping the file into the program or by navigating to the file (File -> Open Main Image...). Once loaded, the user can scroll through different time frames of the 4D image series on the sidebar, as noted below.
+A Cartesian DICOM file can be obtained from the ITK-SNAP download page `<https://raw.githubusercontent.com/apouch/GoValve-Root-src/master/data.zip>`. The image can be loaded into ITK-SNAP by simply dragging and dropping the file into the program or by navigating to the file (File -> Open Main Image...). Once loaded, the user can scroll through different time frames of the 4D image series on the sidebar, as noted below.
 
 .. image:: images/load-image.png
     :width: 60%
