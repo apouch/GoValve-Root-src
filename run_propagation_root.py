@@ -33,7 +33,8 @@ p.SetSmoothingPassband(0.05)
 
 ## Add additional mesh to warp
 """Reference mesh with empty string identifier is added by default and cannot be removed"""
-p.AddMeshToWarp('med', os.path.join(WDIR, 'segref.med.vtk'),False)
+#p.AddMeshToWarp('med', os.path.join(WDIR, 'segref.med.vtk'),False)
+p.AddMeshToWarp('bnd', os.path.join(WDIR, 'segref.bnd.vtk'),False)
 
 ## check list of meshes to be warped
 #p.GetWarpingList()

@@ -1,4 +1,8 @@
-function [] = med_thickness2mesh(outdir,tag,fnbnd_ref,fnmed_ref,framenums,fref)
+function [] = med_thickness2mesh(outdir,tag,fnbnd_ref,fnmed_ref,nref,nstart,ndone)
+
+nref = str2num(nref);
+nstart = str2num(nstart);
+ndone = str2num(ndone);
 
 mbnd_ref = vtk_polydata_read(fnbnd_ref);
 bnd_medind = vtk_get_point_data(mbnd_ref,'MedialIndex')+1;
@@ -6,19 +10,22 @@ bnd_medind = vtk_get_point_data(mbnd_ref,'MedialIndex')+1;
 mmed_ref = vtk_polydata_read(fnmed_ref);
 med_label = vtk_get_point_data(mmed_ref,'Label');
 med_stj = vtk_get_point_data(mmed_ref,'STJ');
-med_vaj = vtk_get_point_data(mmed_ref,'VAJ');
+med_vaj = vtk_get_point_data(mmed_ref,'LVO');
 nmpts = size(mmed_ref.points,1);
 
-for k = 1 : length(framenums)
+display(['nstart is ' int2str(nstart)]);
+display(['ndone is ' int2str(ndone)]);
+
+for k = nstart : ndone
     
-    fnum = framenums(k);
+    fnum = k;
     
-    if fnum ~= fref
+    if fnum ~= nref
     
-        fnbnd = [outdir '/' tag '_bnd-prop_f' int2str(fnum) '.vtk'];
+        fnbnd = [outdir '/seg_' tag '_bnd_' int2str(fnum) '.vtk'];
         mbnd = vtk_polydata_read(fnbnd);
 
-        fnmed_out = [outdir '/' tag '_med-prop-recon_f' int2str(fnum) '.vtk'];
+        fnmed_out = [outdir '/seg_' tag '_med_recon_' int2str(fnum) '.vtk'];
 
         pts_med = zeros(nmpts,3);
         med_thickness = zeros(nmpts,1);
@@ -46,7 +53,7 @@ for k = 1 : length(framenums)
         mmed = vtk_add_point_data(mmed,'Thickness',med_thickness);
         mmed = vtk_add_point_data(mmed,'Radius',med_thickness/2);
         mmed = vtk_add_point_data(mmed,'STJ',med_stj);
-        mmed = vtk_add_point_data(mmed,'VAJ',med_vaj);
+        mmed = vtk_add_point_data(mmed,'LVO',med_vaj);
         vtk_polydata_write(fnmed_out,mmed);
     end
 

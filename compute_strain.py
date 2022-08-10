@@ -748,7 +748,7 @@ if __name__=='__main__':
     print("Frame time ...")
     print(FT)
     
-    fnames = sorted(glob.glob(os.path.join(WDIR,'*med*.vtk')))
+    fnames = sorted(glob.glob(os.path.join(WDIR,'*med_recon*.vtk')))
     fdir = os.path.dirname(fnames[0])
 
     common = os.path.commonprefix(fnames)
