@@ -35,20 +35,20 @@ echo "Frame time is ${FT} ms"
 
 # convert segmentation to vtk with label data
 FNVTK=$WDIR/segref.vtk
-#$PATH_VTKLEVELSET/vtklevelset -pl $FNSEG $FNVTK 1
+$PATH_VTKLEVELSET/vtklevelset -pl $FNSEG $FNVTK 1
 
 # create medial and boundary meshes of reference segmentation
 FNMEDOUT=$WDIR/segref.med.vtk
 FNBNDOUT=$WDIR/segref.bnd.vtk
-#$PATH_MATLAB/matlab -batch "medial_mesh('$FNVTK','$FNMEDOUT','$FNBNDOUT')"
+$PATH_MATLAB/matlab -batch "medial_mesh('$FNVTK','$FNMEDOUT','$FNBNDOUT')"
 
 # propagate reference mesh to other frames in the series
-#python run_propagation_root.py $WDIR $FNIMG $FNSEG $NREF $NSTART $NDONE $TAG $PATH_GREEDY $PATH_VTKLEVELSET
+python run_propagation_root.py $WDIR $FNIMG $FNSEG $NREF $NSTART $NDONE $TAG $PATH_GREEDY $PATH_VTKLEVELSET
 
 # construct medial surfaces from boundary meshes
 MESHDIR=$WDIR/output/mesh
-#$PATH_MATLAB/matlab -batch "medial_recon_from_bnd('$MESHDIR','$TAG','$FNBNDOUT','$FNMEDOUT','$NREF','$NSTART','$NDONE')"
-#cp $FNMEDOUT $MESHDIR/seg_${TAG}_med_recon_${NREF}.vtk
+$PATH_MATLAB/matlab -batch "medial_recon_from_bnd('$MESHDIR','$TAG','$FNBNDOUT','$FNMEDOUT','$NREF','$NSTART','$NDONE')"
+cp $FNMEDOUT $MESHDIR/seg_${TAG}_med_recon_${NREF}.vtk
 
 # compute root strain
 python compute_strain.py ${WDIR}/output/mesh $FT $NOPEN $NCLOSE $NREF
