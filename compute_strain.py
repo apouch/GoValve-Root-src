@@ -5,7 +5,6 @@ import vtk
 from vtk.util.numpy_support import vtk_to_numpy
 import matplotlib.pyplot as plt
 import glob
-import shutil
 
 def OrderList(flist,N,ref):
     '''
@@ -297,10 +296,10 @@ def calStrains(polydata, RA, NC, l_Cell, c_Cell):
         #Define Deformed Vectors
         a1 = Cell[2,:]-Cell[0,:]
         a2 = Cell[2,:]-Cell[1,:]
-
+        
         G      = np.array([[np.dot(A1,A1),np.dot(A1,A2)],[np.dot(A2,A1),np.dot(A2,A2)]])
         invG   = np.linalg.inv(G)
-
+        
         A1dual = invG[0,0]*A1 + invG[0,1]*A2
         A2dual = invG[1,0]*A1 + invG[1,1]*A2
         F   = np.outer(a1,A1dual) + np.outer(a2,A2dual)
@@ -312,15 +311,15 @@ def calStrains(polydata, RA, NC, l_Cell, c_Cell):
         trC2  = C2.trace()
         I1[i] = trC
         J[i]  = np.sqrt((trC**2-trC2)/2)
-    
-        # 
+        
+        # Calculate Strains
         l_Strain[i] = np.dot(l_Cell[i,:],np.dot(C,l_Cell[i,:]))
         c_Strain[i] = np.dot(c_Cell[i,:],np.dot(C,c_Cell[i,:]))
         
     return J, I1, l_Strain, c_Strain
 
 
-def calVectors(polydata,Pts,Cells,NP,NC,CellIds):
+def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
     '''
     Finds the directional vectors for each point. 
     Keyword arguments:
@@ -333,6 +332,10 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds):
     for both the points and the cells (with suffices *_Pt and *_Cell respectively) 
     Warning: the longitudinal (and by asscociation circumferential) vectors are dependent on the mesh structure.
     '''
+    
+    #Get Mid-Line Vector
+    MidLine = np.subtract(STJMid,VAJMid)
+    MidLine /= np.linalg.norm(MidLine)
 
     #Use vtk to get point normals
     normals = vtk.vtkPolyDataNormals()
@@ -342,54 +345,35 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds):
     
     n_Pt = vtk_to_numpy(normals.GetOutput().GetPointData().GetNormals())
     
-    n_Cell = np.zeros((NC,3)) 
-
-    #Create empty arrays for longitudinal and circumferential vectors
     l_Pt = np.zeros((NP,3))
     c_Pt = np.zeros((NP,3))
+    for i in range(NP):
+        # Project Midline onto plane of normal
+        l_Pt[i] = MidLine - np.multiply(np.dot(n_Pt[i],MidLine),n_Pt[i])/(np.dot(n_Pt[i],n_Pt[i]))
+        # Find circumferential vector from normal and longitudinal
+        c_Pt[i] = np.cross(l_Pt[i],n_Pt[i])
+        
+        # Normalise Vectors
+        n_Pt[i] /= np.linalg.norm(n_Pt[i])
+        l_Pt[i] /= np.linalg.norm(l_Pt[i])
+        c_Pt[i] /= np.linalg.norm(c_Pt[i])
+        
+    n_Cell = np.zeros((NC,3)) 
     l_Cell = np.zeros((NC,3))
     c_Cell = np.zeros((NC,3))
-
-    #Restructure Pts to be in list of 25 rings with 36 points each (mesh dependent)
-    Points = np.zeros((3,25,36))
-    for i in range(3):
-        for j in range(25):
-            for k in range(36):
-                Points[i,j,k] = Pts[((j)%25+k*25)%900,i]
-
-    #Find longitudinal vectors
-    for i in range(3):
-        for j in range(24):
-            for k in range(36):
-                l_Pt[((j)%25+k*25)%900,i] = Points[i,(j+1)%25,k] - Points[i,j,k]
-
-        for j in [24]:
-            for k in range(36):
-                l_Pt[((j)%25+k*25)%900,i] = Points[i,j,k] - Points[i,(j-1),k]
-
-
-    #Make unit vectors and find circumferential vectors
-    for i in range(NP):
-        #Make normal and longitudinal vectors unit vectors
-        n_Pt[i,:] /= np.sqrt(sum((n_Pt[i,j])**2 for j in range(3)))
-
-        l_Pt[i,:] /= np.sqrt(sum((l_Pt[i,j]**2) for j in range(3)))
-        #Calculate circumferential vector
-        c_Pt[i,:]  = np.cross(n_Pt[i,:],l_Pt[i,:])
-        c_Pt[i,:] /= np.sqrt(sum((c_Pt[i,j]**2) for j in range(3))) 
     
     for i in range(NC):
-        for j in range(3):
-            n_Cell[i,j] = (sum(n_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-            l_Cell[i,j] = (sum(l_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-            c_Cell[i,j] = (sum(c_Pt[int(CellIds[i,k]),j] for k in range(3)))/3
-
-    for i in range(NC):
-        #Make normal and longitudinal vectors unit vectors
-        l_Cell[i,:] /= np.sqrt(sum((l_Cell[i,j]**2) for j in range(3)))
-        #Calculate circumferential vector
-        c_Cell[i,:] /= np.sqrt(sum((c_Cell[i,j]**2) for j in range(3)))
-        n_Cell[i,:] /= np.sqrt(sum((n_Cell[i,j])**2 for j in range(3)))
+        #Get normal to cell
+        n_Cell[i] = np.cross(np.subtract(Cells[i,0],Cells[i,2]),np.subtract(Cells[i,0],Cells[i,1]))
+        # Project midline onto plane of normal
+        l_Cell[i] = MidLine - np.multiply(np.dot(n_Cell[i],MidLine),n_Cell[i])/(np.dot(n_Cell[i],n_Cell[i]))
+        # Find circumferential vector from normal and longitudinal
+        c_Cell[i] = np.cross(l_Cell[i],n_Cell[i])
+        
+        # Normalise Vectors
+        n_Cell[i] /= np.linalg.norm(n_Cell[i])
+        l_Cell[i] /= np.linalg.norm(l_Cell[i])
+        c_Cell[i] /= np.linalg.norm(c_Cell[i])
     
     return n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell
 
@@ -435,14 +419,9 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
     NC = polydata.GetNumberOfCells()
     if not polydata.GetPointData().GetArray(0):
         print('Warning Wall Thickness data is missing')
-        ThickData = np.zeros((NC,3))
+        ThickData = np.zeros((NP,3))
     else:
-        ThickData = np.zeros((NC,3))
-        NumOfArr = polydata.GetPointData().GetNumberOfArrays()
-        for i in range(NumOfArr):
-           if polydata.GetPointData().GetArrayName(i) == 'Thickness':
-               ThickData = vtk_to_numpy(polydata.GetPointData().GetArray(i))
-
+        ThickData = vtk_to_numpy(polydata.GetPointData().GetArray('Thickness'))
     #Default is set to fix the mesh to the reference position
     RefPointsFixed = RefPoints
 
@@ -500,7 +479,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
             if float(X)>=OpenX and float(X)<CloseX:
                 ValvePosition[X] = 1
 
-        print('Reading Current Frame:', Fname)
+        print('Running Frame:', X+1)
 
         # Read the source file.
         reader.SetFileName(Fname)
@@ -523,14 +502,10 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         if not polydata.GetPointData().GetArray(0): 
             print('Warning Wall Thickness data is missing')
-            ThickData = np.zeros((NC,3))
+            ThickData = np.zeros((NP,3))
         else:
-            ThickData = np.zeros((NC,3))
-            NumOfArr = polydata.GetPointData().GetNumberOfArrays()
-            for i in range(NumOfArr):
-               if polydata.GetPointData().GetArrayName(i) == 'Thickness':
-                   ThickData = vtk_to_numpy(polydata.GetPointData().GetArray(i))
-
+            ThickData = vtk_to_numpy(polydata.GetPointData().GetArray('Thickness'))
+        
         #Check that the number of points and cells are consistent
         if NP != polydata.GetNumberOfPoints():
             raise ValueError('Error: the number of points between the reference and deformed frames differ')
@@ -546,7 +521,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
             Cells[i,:,:] = vtk_to_numpy(polydata.GetCell(i).GetPoints().GetData())
             for j in range(3):
                 CellIds[i,j] = (polydata.GetCell(i).GetPointIds().GetId(j))
-
+        
         #########################################
         # Calculate Displacements
         TotDisp, WallDisp, RootDisp = calDisp(polydata,Pts[X,:,:],NP,RefPointsFixed,RefMids)
@@ -582,10 +557,29 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         #Mark Location of interatrial septum
         InterAtrialSeptum = np.zeros(NP)
         InterAtrialSeptum[0:25] = 1
-
+        
+        #Get STJ and VAJ Points
+        STJ       = vtk_to_numpy(polydata.GetPointData().GetArray('STJ'))
+        VAJ       = vtk_to_numpy(polydata.GetPointData().GetArray('VAJ'))
+        
+        STJPts = np.zeros((int(sum(STJ)),3))
+        VAJPts = np.zeros((int(sum(VAJ)),3))
+        k=0
+        l=0
+        for i in range(NP):
+            if STJ[i] == 1:
+                STJPts[k]=Pts[X,i,:]
+                k+=1
+            if VAJ[i] == 1:
+                VAJPts[l]=Pts[X,i,:]
+                l+=1
+                
+        STJMid = [sum(STJPts[:,0])/len(STJPts[:,0]),sum(STJPts[:,1])/len(STJPts[:,1]),sum(STJPts[:,2])/len(STJPts[:,2])]
+        VAJMid = [sum(VAJPts[:,0])/len(VAJPts[:,0]),sum(VAJPts[:,1])/len(VAJPts[:,1]),sum(VAJPts[:,2])/len(VAJPts[:,2])]
+        
         #########################################
         #Define Normal, Longitudinal, and Circumferential vectors
-        n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell = calVectors(polydata,Pts[X,:,:],Cells,NP,NC,CellIds)
+        n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell = calVectors(polydata,Pts[X,:,:],Cells,NP,NC,CellIds,STJMid,VAJMid)
 
         #########################################
         #Define Properties: J and I1
@@ -625,14 +619,12 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         # Add Cell Data
         CellData  = [I1, J, Long_Strain, Circ_Strain]
-        CellNames = ['I1','J','Long_Strain', 'Circ_Strain'] 
+        CellNames = ['I1_Cell','J_Cell','Long_Strain_Cell', 'Circ_Strain_Cell'] 
         for i in range(len(CellNames)) :
             arrayCell = vtk.util.numpy_support.numpy_to_vtk(CellData[i], deep=True)
             arrayCell.SetName(CellNames[i])
             dataCells = polydata.GetCellData()
             dataCells.AddArray(arrayCell)
-
-        #NumArr = c2p.GetPolyDataOutput().GetPointData().GetNumberOfArrays()
 
         # Convert Cell Data to Point Data
         c2p = vtk.vtkCellDataToPointData()
@@ -642,13 +634,13 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         NumOfArr = c2p.GetPolyDataOutput().GetPointData().GetNumberOfArrays()
 
         for i in range(NumOfArr):
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'I1':
+            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'I1_Cell':
                 I1_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'J':
+            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'J_Cell':
                 J_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Long_Strain':
+            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Long_Strain_Cell':
                 l_Strain_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
-            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Circ_Strain':
+            if c2p.GetPolyDataOutput().GetPointData().GetArrayName(i) == 'Circ_Strain_Cell':
                 c_Strain_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
 
         # Add Point Data
@@ -663,7 +655,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         # Add Vector Data on Points
         VectorData = [TotDisp,WallDisp,RootDisp,n_Pt,l_Pt,c_Pt]
-        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root','Normal','Longtudinal','Circumferential']
+        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root','Normal_Pt','Longtudinal_Pt','Circumferential_Pt']
         for i in range(len(VectorNames)) :
             arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
             arrayVector.SetName(VectorNames[i])
@@ -673,7 +665,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         # Add Vector Data on Cells
         VectorData = [n_Cell,l_Cell,c_Cell]
-        VectorNames = ['Normal','Longtudinal','Circumferential']
+        VectorNames = ['Normal_Cell','Longtudinal_Cell','Circumferential_Cell']
         for i in range(len(VectorNames)) :
             arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
             arrayVector.SetName(VectorNames[i])
@@ -723,7 +715,6 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         
         writer.SetFileName(fname)
         writer.SetInputData(polydata)
-        print('Writing ',fname)
         writer.Write()
 
     WallAreaRatio[:]  = WallArea[:]/WallArea[0]
@@ -745,10 +736,9 @@ if __name__=='__main__':
     refN = int(sys.argv[5])
         
     print("Computing root strain")
-    print("Frame time ...")
-    print(FT)
+    print("Frame time:",FT)
     
-    fnames = sorted(glob.glob(os.path.join(WDIR,'*med_recon*.vtk')))
+    fnames = sorted(glob.glob(os.path.join(WDIR,'*med*.vtk')))
     fdir = os.path.dirname(fnames[0])
 
     common = os.path.commonprefix(fnames)
@@ -759,7 +749,6 @@ if __name__=='__main__':
         X=X[0]
         if X==refN:
             ref=Fname
-            print(ref)
     NX = len(fnames)
 
     if not fnames:
@@ -771,10 +760,6 @@ if __name__=='__main__':
             print('Error: Path does not exist:', fdir)
             sys.exit()
         WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N, FId = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),opformat='vtp')
-    
-    print('Total Wall Area =',WallArea)
-    print('Total Wall Volume =',WallVol)
-    print('Total Lumen Volume =',LumenVol)
    
     ###################################
     # Save data
@@ -814,9 +799,6 @@ if __name__=='__main__':
         CSVDataStandardA[:,i] = np.interp(np.linspace(Time[0],Time[Cid],33),Time[0:Cid+1],CSVDataOriginal[0:Cid+1,i])
         CSVDataStandardB[:,i] = np.interp(np.linspace(Time[Cid],Time[NX-1],68),Time[Cid:NX],CSVDataOriginal[Cid:NX,i])
         CSVDataStandard[:,i]  = np.concatenate((CSVDataStandardA[:,i],CSVDataStandardB[:,i]))
-    
-    # Get index closest to opening time in standardised time
-    # index = np.argmin(np.abs(np.array(a)-11.5))
     
     # With the Standardised data saved, reorder the original data to be in the file order
     # Find Id of reference frame
@@ -865,7 +847,6 @@ if __name__=='__main__':
     Fig3name = 'RawDataOriginalTime.png'
     Fig4name = 'RawDataStandardisedTime.png'
 
-
     # Figure 1   
     Plot_Ymax = np.amax(np.concatenate((CSVDataOriginal[:,4],CSVDataOriginal[:,5],CSVDataOriginal[:,6]),axis=None))
     Plot_Ymin = np.amin(np.concatenate((CSVDataOriginal[:,4],CSVDataOriginal[:,5],CSVDataOriginal[:,6]),axis=None))
@@ -900,7 +881,8 @@ if __name__=='__main__':
         OF_Stan = int(100*(CSVDataOriginal[OFId,0]-CSVDataOriginal[refId,0])/(np.max(CSVDataOriginal[:,0])-np.min(CSVDataOriginal[:,0])))
     elif CSVDataOriginal[OFId,0]<CSVDataOriginal[refId,0]:
         OF_Stan = int(100*(CSVDataOriginal[refId,0]-CSVDataOriginal[OFId,0])/(np.max(CSVDataOriginal[:,0])-np.min(CSVDataOriginal[:,0])))
-        
+    elif OFId == refId:
+        OF_Stan = 0
         
     Plot_Ymax = np.amax(np.concatenate((CSVDataStandard[:,4],CSVDataStandard[:,5],CSVDataStandard[:,6]),axis=None))
     Plot_Ymin = np.amin(np.concatenate((CSVDataStandard[:,4],CSVDataStandard[:,5],CSVDataStandard[:,6]),axis=None))
@@ -1054,18 +1036,14 @@ if __name__=='__main__':
 
     os.system("pdflatex Summary.tex")
     pdfname = os.path.join(WDIR,'Summary.pdf')
-    shutil.move("Summary.pdf", pdfname )
+    os.rename("Summary.pdf", pdfname )
     
     Fig1name = os.path.join(WDIR,'NormalisedDataOriginalTime.png')
     Fig2name = os.path.join(WDIR,'NormalisedDataStandardisedTime.png')
     Fig3name = os.path.join(WDIR,'RawDataOriginalTime.png')
     Fig4name = os.path.join(WDIR,'RawDataStandardisedTime.png')
     
-    shutil.move("NormalisedDataOriginalTime.png", Fig1name)
-    shutil.move("NormalisedDataStandardisedTime.png", Fig2name)
-    shutil.move("RawDataOriginalTime.png", Fig3name)
-    shutil.move("RawDataStandardisedTime.png", Fig4name)
-
-    os.remove("Summary.aux")
-    os.remove("Summary.log")
-    os.remove("Summary.out")
+    os.rename("NormalisedDataOriginalTime.png", Fig1name)
+    os.rename("NormalisedDataStandardisedTime.png", Fig2name)
+    os.rename("RawDataOriginalTime.png", Fig3name)
+    os.rename("RawDataStandardisedTime.png", Fig4name)
