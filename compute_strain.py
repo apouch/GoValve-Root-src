@@ -655,7 +655,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         # Add Vector Data on Points
         VectorData = [TotDisp,WallDisp,RootDisp,n_Pt,l_Pt,c_Pt]
-        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root','Normal_Pt','Longtudinal_Pt','Circumferential_Pt']
+        VectorNames = ['Displacement_Total','Displacement_Wall','Displacement_Root','Normal_Pt','Longitudinal_Pt','Circumferential_Pt']
         for i in range(len(VectorNames)) :
             arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
             arrayVector.SetName(VectorNames[i])
@@ -665,7 +665,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
         # Add Vector Data on Cells
         VectorData = [n_Cell,l_Cell,c_Cell]
-        VectorNames = ['Normal_Cell','Longtudinal_Cell','Circumferential_Cell']
+        VectorNames = ['Normal_Cell','Longitudinal_Cell','Circumferential_Cell']
         for i in range(len(VectorNames)) :
             arrayVector = vtk.util.numpy_support.numpy_to_vtk(VectorData[i], deep=True)
             arrayVector.SetName(VectorNames[i])
