@@ -26,9 +26,7 @@ Albert T. Cheung, Lourdes Al Ghofaily, Robert C. Gorman, \\Nimesh D. Desai, Jose
 \end{figure}
 \newpage
 \subsection*{Data Summary}
-For each frame, there are now .vtp/.vtk files. These are the medial meshes of the submitted case with the applied labels and new biomechanical values that have been calculated. 
-
-The data included are either specific to the points, to the cells, or are global data that are uniform over the whole field.
+For each time frame in the 4D image, there are now .vtp/.vtk files. These files contain medial meshes of the root from the submitted image, with the applied labels and new biomechanical values that have been calculated. The data included are either specific to the points, to the cells, or are global data that are uniform over the whole field, as summarised next.
 \\
 ~
 \\
@@ -37,7 +35,7 @@ The data included are either specific to the points, to the cells, or are global
 \textbf{Name}	& \textbf{Type} & \textbf{Description}   \\
 	\hline
 	\hline
-	\multicolumn{3}{|c|}{\textbf{Anatomy}} \\
+	\multicolumn{3}{|c|}{\textbf{Anatomical Labels}} \\
 	\hline
 STJ	& Scalar  & Marks the sinotubular junction with value 1 and 0 elsewhere.  \\
 	\hline
@@ -54,13 +52,13 @@ Curv$\_$Gaussian	& Scalar& The gaussian curvature.\\
 \hline
 Curv$\_$Mean	& Scalar& The mean curvature.\\
 	\hline
-J$\_$Pt	& Scalar& The jacobian.\\
+J$\_$Pt	& Scalar& The area jacobian, with respect to the reference frame.\\
 	\hline
 I1$\_$Pt& Scalar & The first invariant of Cauchy-Green deformation tensor. \\
 	\hline
 Motion	& Scalar& The magnitude of the displacement of each point between the time frames, relative to the chosen reference frame, where the motion at all the nodes is 0.\\
 	\hline
-Total$\_$Motion	& Scalar& The cumulative magnitude of displacement of each point between the time frames, relative to the chosen reference frame, where the motion at all the nodes is 0, and frames before the reference frame follow on from the final frame (due to the cyclic nature of the data).\\
+Total$\_$Motion	& Scalar& The cumulative magnitude of displacement of each point (i.e. integral over time of the Motion), relative to the chosen reference frame, where the motion at all the nodes is 0, and frames before the reference frame follow on from the final frame (due to the cyclic nature of the data).\\
 	\hline
 Radius	&Scalar & The radius of the maximally inscribed ball/sphere centred at medial surface.\\
 \hline
@@ -80,7 +78,7 @@ Displacement$\_$Total & Vector & The total displacement, relative to the referen
 	\hline
 Displacement$\_$Wall & Vector & The displacement relative to the root's centre \newline (i.e. Displacement\_Total - Displacement\_Root). \\
 	\hline
-Displacement$\_$Root  &  Vector& The displacement relative to the root's centre \newline (i.e. Displacement\_Total - Displacement\_Wall).\\
+Displacement$\_$Root  &  Vector& The displacement vector containing the motion of entire root as a rigid body (i.e., uniform over the mesh).\\
 	\hline
 Displacement$\_$Total & Vector & The total displacement, relative to the reference frame. \\
 \hline
