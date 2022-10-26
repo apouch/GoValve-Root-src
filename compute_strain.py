@@ -794,11 +794,12 @@ if __name__=='__main__':
     Oid = int(OF) - int(refN)
     Cid = int(CF) - int(refN)
 
+    # CSVDataStandard[:,0] = np.concatenate((TimeStandard,TimeStandard[0]),axis=None)
     CSVDataStandard[:,0] = TimeStandard
     for i in range(1,15):
         CSVDataStandardA[:,i] = np.interp(np.linspace(Time[0],Time[Cid],33),Time[0:Cid+1],CSVDataOriginal[0:Cid+1,i])
-        CSVDataStandardB[:,i] = np.interp(np.linspace(Time[Cid],Time[NX-1],68),Time[Cid:NX],CSVDataOriginal[Cid:NX,i])
-        CSVDataStandard[:,i]  = np.concatenate((CSVDataStandardA[:,i],CSVDataStandardB[:,i]))
+        CSVDataStandardB[:,i] = np.interp(np.linspace(Time[Cid],Time[NX-1]+Time[0],68),np.concatenate((Time[Cid:NX],Time[NX-1]+Time[0]),axis=None),np.concatenate((CSVDataOriginal[Cid:NX,i],CSVDataOriginal[0,i]),axis=None))
+        CSVDataStandard[:,i]  = np.concatenate((CSVDataStandardA[:,i],CSVDataStandardB[:,i]),axis=None)
     
     # With the Standardised data saved, reorder the original data to be in the file order
     # Find Id of reference frame
@@ -819,23 +820,26 @@ if __name__=='__main__':
         if X==CF:
             CFId = i
     
-    CSVDataOriginal = np.zeros((NX,15))
-    CSVDataOriginal[:,0]  = FId[FIdOriginal.astype(int)]*FT
-    CSVDataOriginal[:,1]  = np.array(WallArea)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,2]  = np.array(WallVol)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,3]  = np.array(LumenVol)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,4]  = np.array(WallAreaRatio)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,5]  = np.array(WallVolRatio)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,6]  = np.array(LumenVolRatio)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,7]  = np.array(AvgJ)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,8]  = np.array(AvgI1)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,9]  = np.array(AvgJRatio)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,10] = np.array(AvgI1Ratio)[FIdOriginal.astype(int)]
-    CSVDataOriginal[:,11] = np.full(NX,N)
-    CSVDataOriginal[:,12] = np.full(NX,OF)
-    CSVDataOriginal[:,13] = np.full(NX,CF)
-    CSVDataOriginal[:,14] = np.full(NX,refN)
+    CSVDataOriginal = np.zeros((NX+1,15))
+    CSVDataOriginal[:,0]    = np.concatenate((FId[FIdOriginal.astype(int)]*FT,FId[FIdOriginal.astype(int)][NX-1]*FT+FId[FIdOriginal.astype(int)][0]*FT),axis=None)
+    CSVDataOriginal[:NX,1]  = np.array(WallArea)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,2]  = np.array(WallVol)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,3]  = np.array(LumenVol)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,4]  = np.array(WallAreaRatio)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,5]  = np.array(WallVolRatio)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,6]  = np.array(LumenVolRatio)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,7]  = np.array(AvgJ)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,8]  = np.array(AvgI1)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,9]  = np.array(AvgJRatio)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,10] = np.array(AvgI1Ratio)[FIdOriginal.astype(int)]
+    CSVDataOriginal[:NX,11] = np.full(NX,N)
+    CSVDataOriginal[:NX,12] = np.full(NX,OF)
+    CSVDataOriginal[:NX,13] = np.full(NX,CF)
+    CSVDataOriginal[:NX,14] = np.full(NX,refN)
     
+    for i in range(1,15):
+        CSVDataOriginal[:,i] = np.concatenate((CSVDataOriginal[:NX,i],CSVDataOriginal[0,i]),axis=None)
+        
     CSVDataOriginalFile = os.path.join(WDIR,'CSVDataOriginal.csv')
     CSVDataStandardFile = os.path.join(WDIR,'CSVDataStandard.csv')
 
