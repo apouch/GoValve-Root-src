@@ -13,8 +13,7 @@
 
 \title{Summary of Aortic Root Analysis}
 \author{Ankush Aggarwal\thanks{A. Aggarwal is with the
-Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow, Glasgow, UK (e-mail:ankush.aggarwal@glasgow.ac.uk). }, Peter Mortensen, Jilei Hao, Lukasz Kaczmarczyk, \\ 
-Albert T. Cheung, Lourdes Al Ghofaily, Robert C. Gorman, \\Nimesh D. Desai, Joseph E. Bavaria, Alison M. Pouch \thanks{A. Pouch is with the Departments of Radiology and Bioengineering, University of Pennsylvania, Philadelphia, PA, USA (e-mail: pouch@pennmedicine.upenn.edu).}
+Glasgow Computational Engineering Centre, James Watt School of Engineering, University of Glasgow, Glasgow, UK (e-mail:ankush.aggarwal@glasgow.ac.uk). }, Peter Mortensen, Jilei Hao, Paul Yushkevich, Alison M. Pouch \thanks{A. Pouch is with the Departments of Radiology and Bioengineering, University of Pennsylvania, Philadelphia, PA, USA (e-mail: pouch@pennmedicine.upenn.edu).}
 %
 \thanks{This work was supported in part by the Chan Zuckerberg Initiative 2020-219012 grant, the Institute of Physics and Engineering in Medicine, and the National Heart Lung and Blood Institute (K01-HL141643).}
 }
@@ -43,7 +42,7 @@ VAJ	& Scalar &  Marks the ventriculo-aortic junction with value 1 and 0 elsewher
 	\hline 
 IAS	&Scalar &Marks the interatrial septum with value 1 and 0 elsewhere. \\
 	\hline
-Label	& Scalar & ???\\
+Label	& Scalar & The label of the segmentation for the root wall.\\
 \hline
 \hline
 \multicolumn{3}{|c|}{\textbf{Point Properties}} \\
@@ -79,8 +78,6 @@ Displacement$\_$Total & Vector & The total displacement, relative to the referen
 Displacement$\_$Wall & Vector & The displacement relative to the root's centre \newline (i.e. Displacement\_Total - Displacement\_Root). \\
 	\hline
 Displacement$\_$Root  &  Vector& The displacement vector containing the motion of entire root as a rigid body (i.e., uniform over the mesh).\\
-	\hline
-Displacement$\_$Total & Vector & The total displacement, relative to the reference frame. \\
 \hline
 \hline
 \multicolumn{3}{|c|}{\textbf{Cell Properties}} \\
