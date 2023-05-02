@@ -727,7 +727,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
 if __name__=='__main__':
     
-    FixAndRotate = True
+    FixAndRotate = False
     
     WDIR = sys.argv[1]
     FT = float(sys.argv[2])
@@ -759,7 +759,7 @@ if __name__=='__main__':
         if not os.path.exists(fdir):
             print('Error: Path does not exist:', fdir)
             sys.exit()
-        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N, FId = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),opformat='vtp')
+        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N, FId = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),FixAndRotate=FixAndRotate,opformat='vtp')
    
     ###################################
     # Save data
