@@ -319,7 +319,7 @@ def calStrains(polydata, RA, NC, l_Cell, c_Cell):
     return J, I1, l_Strain, c_Strain
 
 
-def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
+def calVectors(polydata,Pts,Cells,NP,NC,STJMid,VAJMid):
     '''
     Finds the directional vectors for each point. 
     Keyword arguments:
@@ -327,7 +327,6 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
     Pts -- vtk object for the current time point
     NP -- number of points
     NC -- number of cells
-    CellIds -- list of point ids for each cell
     Returns the normal vectors, n, the longitudinal vectors, l, and the circumferential vectors, c, 
     for both the points and the cells (with suffices *_Pt and *_Cell respectively) 
     Warning: the longitudinal (and by asscociation circumferential) vectors are dependent on the mesh structure.
@@ -347,6 +346,14 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
     
     l_Pt = np.zeros((NP,3))
     c_Pt = np.zeros((NP,3))
+    Pts_project = np.zeros((NP,3))
+
+    def project(x):
+        return x - np.dot(x,MidLine)*MidLine
+
+    STJMid_project = project(STJMid) #acts as the center
+    VAJMid_project = project(VAJMid) #should be same as STJMid_project
+
     for i in range(NP):
         # Project Midline onto plane of normal
         l_Pt[i] = MidLine - np.multiply(np.dot(n_Pt[i],MidLine),n_Pt[i])/(np.dot(n_Pt[i],n_Pt[i]))
@@ -357,7 +364,11 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
         n_Pt[i] /= np.linalg.norm(n_Pt[i])
         l_Pt[i] /= np.linalg.norm(l_Pt[i])
         c_Pt[i] /= np.linalg.norm(c_Pt[i])
-        
+
+        #project cooraintes
+        Pts_project[i] = project(Pts[i])
+    
+    Pts_rad = np.linalg.norm(Pts_project-STJMid_project,axis=1)
     n_Cell = np.zeros((NC,3)) 
     l_Cell = np.zeros((NC,3))
     c_Cell = np.zeros((NC,3))
@@ -375,7 +386,7 @@ def calVectors(polydata,Pts,Cells,NP,NC,CellIds,STJMid,VAJMid):
         l_Cell[i] /= np.linalg.norm(l_Cell[i])
         c_Cell[i] /= np.linalg.norm(c_Cell[i])
     
-    return n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell
+    return n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell, Pts_rad
 
 def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True,opformat='vtp'):
     '''
@@ -444,6 +455,28 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         RA[i,0,:] = Cells[i,2,:]-Cells[i,0,:]
         RA[i,1,:] = Cells[i,2,:]-Cells[i,1,:]
 
+    #Get STJ and VAJ Points
+    STJ       = vtk_to_numpy(polydata.GetPointData().GetArray('STJ'))
+    VAJ       = vtk_to_numpy(polydata.GetPointData().GetArray('VAJ'))
+    
+    STJPts = np.zeros((int(sum(STJ)),3))
+    VAJPts = np.zeros((int(sum(VAJ)),3))
+    k=0
+    l=0
+    for i in range(NP):
+        if STJ[i] == 1:
+            STJPts[k]=RefPoints[i,:]
+            k+=1
+        if VAJ[i] == 1:
+            VAJPts[l]=RefPoints[i,:]
+            l+=1
+            
+    STJMid = [sum(STJPts[:,0])/len(STJPts[:,0]),sum(STJPts[:,1])/len(STJPts[:,1]),sum(STJPts[:,2])/len(STJPts[:,2])]
+    VAJMid = [sum(VAJPts[:,0])/len(VAJPts[:,0]),sum(VAJPts[:,1])/len(VAJPts[:,1]),sum(VAJPts[:,2])/len(VAJPts[:,2])]
+    
+    #########################################
+    #Define Normal, Longitudinal, and Circumferential vectors
+    Pts_rad_ref = calVectors(polydata,RefPoints,Cells,NP,NC,STJMid=STJMid,VAJMid=VAJMid)[-1]
 
     ###########################################
     # Define Data At Every Time Frame
@@ -579,7 +612,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
         
         #########################################
         #Define Normal, Longitudinal, and Circumferential vectors
-        n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell = calVectors(polydata,Pts[X,:,:],Cells,NP,NC,CellIds,STJMid,VAJMid)
+        n_Pt, l_Pt, c_Pt, n_Cell, l_Cell, c_Cell, Pts_rad = calVectors(polydata,Pts[X,:,:],Cells,NP,NC,STJMid,VAJMid)
 
         #########################################
         #Define Properties: J and I1
@@ -644,8 +677,8 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
                 c_Strain_Pt = vtk_to_numpy(c2p.GetPolyDataOutput().GetPointData().GetArray(i))
 
         # Add Point Data
-        PointData = [CDG,CDM,I1_Pt,J_Pt,Motion,InterAtrialSeptum,TotalMotion[X],l_Strain_Pt,c_Strain_Pt]
-        PointNames = ['Curv_Gaussian','Curv_Mean','I1_Pt','J_Pt','Motion','IAS','Total_Motion','Long_Strain_Pt','Circ_Strain_Pt']
+        PointData = [CDG,CDM,I1_Pt,J_Pt,Motion,InterAtrialSeptum,TotalMotion[X],l_Strain_Pt,c_Strain_Pt, Pts_rad, Pts_rad/Pts_rad_ref]
+        PointNames = ['Curv_Gaussian','Curv_Mean','I1_Pt','J_Pt','Motion','IAS','Total_Motion','Long_Strain_Pt','Circ_Strain_Pt', 'Lumen Radius', 'Lumen Radius Ratio']
         for i in range(len(PointNames)) :
             arrayPoint = vtk.util.numpy_support.numpy_to_vtk(PointData[i], deep=True)
             arrayPoint.SetName(PointNames[i])
@@ -727,7 +760,7 @@ def ProcessData(flist,ref,FT,OF=None,CF=None,prefix='Strains/',FixAndRotate=True
 
 if __name__=='__main__':
     
-    FixAndRotate = True
+    FixAndRotate = False
     
     WDIR = sys.argv[1]
     FT = float(sys.argv[2])
@@ -759,7 +792,7 @@ if __name__=='__main__':
         if not os.path.exists(fdir):
             print('Error: Path does not exist:', fdir)
             sys.exit()
-        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N, FId = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),opformat='vtp')
+        WallArea, WallVol, LumenVol, Time, Pts, WallAreaRatio, WallVolRatio, LumenVolRatio, AvgJ, AvgI1, AvgJRatio, AvgI1Ratio, TotalMotion, N, FId = ProcessData(flist=fnames,ref=ref,FT=FT,OF=OF,CF=CF,prefix=os.path.join(WDIR,'Strains'),FixAndRotate=FixAndRotate,opformat='vtp')
    
     ###################################
     # Save data
