@@ -766,7 +766,7 @@ if __name__=='__main__':
     FT = float(sys.argv[2])
     OF = int(sys.argv[3])
     CF = int(sys.argv[4])
-    refN = int(sys.argv[5])
+    refN = OF-1 #int(sys.argv[5])
         
     print("Computing root strain")
     print("Frame time:",FT)
